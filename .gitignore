@@ -1,0 +1,13 @@
+# User-specific learnings (generated at runtime, not shared)
+.context/learnings/**/*.md
+!.context/learnings/INDEX.md
+
+# Claude settings
+.claude/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Archives
+*.zip

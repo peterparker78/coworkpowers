@@ -1,0 +1,18 @@
+{
+  "name": "coworkpowers",
+  "version": "1.0.0",
+  "description": "Knowledge work superpowers for pharma/biotech consulting and clinical development. Research, execute, review, and capture learnings to make each task easier than the last.",
+  "author": {
+    "name": "Zahid Bashir"
+  },
+  "license": "MIT",
+  "keywords": [
+    "knowledge-work",
+    "productivity",
+    "compound-learning",
+    "pharma",
+    "biotech",
+    "clinical-development",
+    "consulting"
+  ]
+}
