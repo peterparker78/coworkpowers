@@ -1,46 +1,68 @@
-# CoworkPowers: Knowledge Work Superpowers for Pharma/Biotech & Consulting
+# CLAUDE.md
 
-A system that makes knowledge work compound over time. Four skills orchestrate specialized agents across research, execution, review, and learning capture phases — tuned for pharma/biotech clinical development and consulting.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Skills
+## What This Is
 
-- **`/coworkpowers:workflow-research`** — Research and plan before execution. Discovers MCP tools, classifies stakes, asks clarifying questions, searches past learnings, runs parallel domain-specific research agents, synthesizes into an actionable plan.
-- **`/coworkpowers:workflow-work`** — Execute the plan with specialized agents. Matches each step to the right agent (executive-writer, analyst, decision-architect, clinical-strategist, meeting-orchestrator, regulatory-writer, due-diligence-analyst, market-access-strategist, proposal-writer), validates output against success criteria, assembles the final deliverable. All consulting deliverables follow MBB standards defined in `standards/consulting-documents.md`.
-- **`/coworkpowers:workflow-review`** — Multi-agent quality review from independent perspectives. Progressive loading: routine work skips review, standard gets 2-3 reviewers, high-stakes gets 5-6, board/regulatory gets all 8. Reviewers: clarity, completeness, scientific rigor, regulatory compliance, tone, strategic coherence, devil's advocate, risk assessment. Findings tagged Critical/Important/Minor.
-- **`/coworkpowers:workflow-compound`** — Extract reusable learnings from completed work. Runs 5 extraction agents (pattern-extractor, template-creator, preference-learner, failure-analyzer, domain-insight-capturer). Stores each insight as a discrete markdown file in `.context/learnings/` with YAML frontmatter for searchability. This is where the compound loop closes.
+CoworkPowers is a **Claude Code plugin** (not a traditional software project). It consists entirely of markdown files that define skills, agent prompts, and standards. There is no build system, no tests, and no compiled code.
 
-## Domain Focus
+The plugin orchestrates a 4-phase compound knowledge work loop for pharma/biotech and consulting:
+1. **Research** → 2. **Work** → 3. **Review** → 4. **Compound**
 
-This plugin is optimized for:
-- **Pharma/Biotech Clinical Development**: trial design, competitive landscape, regulatory strategy, endpoint selection, investigator identification
-- **Consulting**: strategic analysis, stakeholder management, decision frameworks, client deliverables, due diligence, market access & pricing, proposals & SOWs
+## Architecture
 
-## MCP Tool Integration
+**Plugin entry point**: `.claude-plugin/plugin.json` — registers the plugin as `coworkpowers`.
 
-Research agents are wired to use these MCP tools directly:
-- **PubMed**: Literature search, article metadata, related articles, full text
-- **bioRxiv/medRxiv**: Preprint search, published preprint tracking
-- **ClinicalTrials.gov**: Trial search, sponsor pipelines, investigators, endpoint analysis, eligibility matching
-- **ChEMBL**: Compound search, target search, bioactivity data, drug mechanisms, ADMET
-- **Open Targets**: Target-disease associations, genetic evidence, drug tractability
+**Four skills** (each a `SKILL.md` in `skills/`):
+- `workflow-research` — Orchestrates parallel research agents, classifies stakes, produces an execution plan
+- `workflow-work` — Matches plan steps to specialized work agents, assembles deliverables
+- `workflow-review` — Runs independent reviewer agents in parallel, synthesizes findings by severity
+- `workflow-compound` — Extracts patterns/templates/preferences/failures into `.context/learnings/`
 
-## Insight Storage
+**Agent prompts** (markdown files in `agents/`):
+- `agents/research/` — 9 agents: context-gatherer (inline), literature-scout, clinical-landscape, competitive-intel, stakeholder-mapper, regulatory-scanner, constraint-analyzer, precedent-researcher, plan-synthesizer
+- `agents/work/` — 9 agents: executive-writer, analyst, decision-architect, clinical-strategist, meeting-orchestrator, regulatory-writer, due-diligence-analyst, market-access-strategist, proposal-writer
+- `agents/review/` — 8 agents: clarity-reviewer, completeness-auditor, scientific-rigor-reviewer, regulatory-compliance-reviewer, tone-calibrator, strategic-coherence-reviewer, devils-advocate, risk-assessor
+- `agents/compound/` — 5 agents: pattern-extractor, template-creator, preference-learner, failure-analyzer, domain-insight-capturer
 
-Past learnings are stored in `.context/learnings/` as individual markdown files with YAML frontmatter. Each insight is self-contained and searchable by type, category, tags, and keywords.
+**Standards**: `standards/consulting-documents.md` — MBB (McKinsey/Bain/BCG) formatting and quality standards applied to all consulting deliverables.
 
-### Insight Types
-- `pattern`: Reusable approach that worked
-- `template`: Structural template for reuse
-- `preference`: User/stakeholder style preferences
-- `failure`: What didn't work and why
-- `insight`: Domain knowledge worth remembering
+**Claude.ai project instructions**: `claude-ai-project/` — 6 numbered files that mirror the plugin's behavior for use as claude.ai project knowledge files.
 
-### Categories
-`clinical-development` | `literature-review` | `competitive-intelligence` | `communication` | `decision` | `meeting` | `regulatory-strategy` | `consulting` | `due-diligence` | `market-access` | `operations`
+**Learnings store**: `.context/learnings/` — Discrete markdown files with YAML frontmatter, organized by category. The Research phase searches these automatically. See `.context/learnings/INDEX.md` for the schema.
 
-## Match Rigor to Stakes
+## Key Design Decisions
 
-- **Routine** (internal notes, quick lookups): context-gatherer only
-- **Standard** (team comms, standard analysis): + 1-2 domain agents
-- **High-stakes** (client deliverables, strategic decisions): + full domain agent roster
-- **Board/Regulatory** (board presentations, regulatory submissions): All agents + constraint analysis
+- **Agents are launched via the Agent tool** with `subagent_type: "general-purpose"`. Each agent's `.md` file is passed as part of the prompt — the files are instructions, not executed code.
+- **Progressive loading**: Stakes level (routine/standard/high-stakes/board-regulatory) controls how many agents are launched. Routine = context-gatherer only; board/regulatory = all agents.
+- **Research agents run in parallel** (Phase 3); work agents run sequentially (since steps may depend on previous output).
+- **Review agents run in parallel** and independently (no reviewer sees other reviewers' findings).
+- **context-gatherer is not a separate agent** — its function is performed inline by the research skill in Phase 2.
+
+## MCP Tool Wiring
+
+Research agents use these MCP tools (see `CONNECTORS.md` for full mapping):
+- **PubMed** → literature-scout
+- **bioRxiv/medRxiv** → literature-scout
+- **ClinicalTrials.gov** → clinical-landscape
+- **ChEMBL** → competitive-intel
+- **Open Targets** → competitive-intel
+- **WebSearch/WebFetch** → all agents (fallback when MCP tools unavailable)
+
+Phase 0 of the research skill auto-discovers available tools and passes the inventory to all agents.
+
+## Editing Guidelines
+
+- Agent `.md` files follow a consistent structure: role description, workflow steps, output format. Preserve this structure when editing.
+- Skill `SKILL.md` files have YAML frontmatter (`name`, `description`) — these are required for plugin registration.
+- The insight file format (YAML frontmatter with type/date/category/task/outcome/tags/takeaway) is a contract — the research phase's grep-based search depends on it.
+- Consulting deliverables must follow Pyramid Principle, MECE, SCR structure, and action titles per `standards/consulting-documents.md`.
+
+## Installation
+
+```bash
+claude --plugin-dir ./CoworkPowers
+```
+
+# currentDate
+Today's date is 2026-03-05.
